@@ -56,7 +56,7 @@ class Tools:
     priv_overlay_path: private overlays directory (src/private-overlays)
     board_path: build directory (/build in chroot)
     third_party_path: third_parth directory (src/third_party)
-    cros_overlay_path: Chromium OS overlay (src/chromiumos-overlay)
+    cros_overlay_path: Chromium OS overlay (src/coreos-overlay)
   """
 
   def __init__(self, output):
@@ -128,7 +128,7 @@ class Tools:
     self.board_path = os.path.join(self.chroot_path, 'build')
     self.third_party_path = os.path.join(self.src_path, 'third_party')
     self.cros_overlay_path = os.path.join(self.third_party_path,
-                                          'chromiumos-overlay')
+                                          'coreos-overlay')
 
   def Filename(self, fname):
     """Resolve a chroot-relative filename to an absolute path.
@@ -281,7 +281,7 @@ class Tools:
 
     This works by finding and executing the version script:
 
-    src/third_party/chromiumos-overlay/chromeos/config/chromeos_version.sh
+    src/third_party/coreos-overlay/coreos/config/coreos_version.sh
 
     Returns:
       Version string in the form '0.14.726.2011_07_07_1635'
@@ -428,7 +428,7 @@ class ToolsTests(unittest.TestCase):
     self.assertEqual(tools.priv_overlay_path, base + 'src/private-overlays')
     self.assertEqual(tools.third_party_path, base + 'src/third_party')
     self.assertEqual(tools.cros_overlay_path, base +
-                     'src/third_party/chromiumos-overlay')
+                     'src/third_party/coreos-overlay')
 
   def testSetRootInsideChroot(self):
     """Inside the chroot, paths are slightly different from outside."""
