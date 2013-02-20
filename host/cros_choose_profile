@@ -80,7 +80,7 @@ ARCH=$(get_board_arch "${BOARD}") || exit 1
 #  * relative profile name from --profile in <overlay>/profiles/<name>
 #  * absolute profile path from --profile
 #  * <overlay>/profiles/base
-#  * ${CHROMIUMOS_PROFILES}/default/linux/${ARCH}/10.0/chromeos
+#  * ${CHROMIUMOS_PROFILES}/default/linux/${ARCH}/10.0/coreos
 #
 # If --profile is non-null and does not exist the script will error
 # If none of the directories exist the script will error as well
@@ -105,7 +105,7 @@ if [ -z "${PROFILES_DIR}" ]; then
 
   # Then, if we are looking for the default profile, we look in the
   # chromiumos-overlay as well.
-  CHROMEOS_PROFILE="${CHROMIUMOS_PROFILES}/default/linux/${ARCH}/10.0/chromeos/"
+  CHROMEOS_PROFILE="${CHROMIUMOS_PROFILES}/default/linux/${ARCH}/10.0/coreos/"
 
   if [ "${PROFILE_NAME}" == "base" ]; then
     PROFILES_LIST="${PROFILES_LIST} ${CHROMEOS_PROFILE}"
