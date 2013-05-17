@@ -30,6 +30,7 @@ find_common_sh() {
 
 find_common_sh
 . "${SCRIPT_ROOT}/common.sh" || exit 1
+. /usr/lib/installer/chromeos-common.sh || exit 1
 
 # Load functions and constants for chromeos-install
 # NOTE: Needs to be called from outside the chroot.
@@ -96,38 +97,15 @@ extract_partition_to_temp_file() {
       skip="$offset" 2>/dev/null
 }
 
-patch_kernel() {
-  local IMAGE="$1"
-  local KERN_FILE="$2"
-
-  echo "Patching kernel" $KERN_FILE
-  echo "   into" $IMAGE
-  local offset=$(partoffset "${IMAGE}" 1)
-  offset=$(($offset * 512))
-  STATE_MNT=$(mktemp -d /tmp/state.XXXXXX)
-  sudo mount -o ro,loop,offset=$offset "$IMAGE" "$STATE_MNT"
-  dd if="$STATE_MNT"/vmlinuz_hd.vblock of="$KERN_FILE" conv=notrunc 2>/dev/null
-  sudo umount "$STATE_MNT"
-  rmdir "$STATE_MNT"
-  STATE_MNT=""
-}
-
-extract_kern_root() {
+extract_root() {
   local bin_file="$1"
-  local kern_out="$2"
-  local root_out="$3"
+  local root_out="$2"
 
-  if [ -z "$kern_out" ]; then
-    die "missing kernel output filename"
-  fi
   if [ -z "$root_out" ]; then
     die "missing root output filename"
   fi
 
-  extract_partition_to_temp_file "$bin_file" 2 "$kern_out"
-  if [ "$FLAGS_patch_kernel" -eq "$FLAGS_TRUE" ]; then
-    patch_kernel "$bin_file" "$kern_out"
-  fi
+  # TODOBP: Patch
   extract_partition_to_temp_file "$bin_file" 3 "$root_out"
 }
 
@@ -136,19 +114,18 @@ DEFINE_string src_image "" "Optional: a source image. If specified, this makes\
  a delta update."
 DEFINE_string output "" "Output file"
 DEFINE_boolean outside_chroot "$FLAGS_FALSE" "Running outside of chroot."
-DEFINE_boolean patch_kernel "$FLAGS_FALSE" "Whether or not to patch the kernel \
-with the patch from the stateful partition (default: false)"
 DEFINE_string private_key "" "Path to private key in .pem format."
 DEFINE_boolean extract "$FLAGS_FALSE" "If set, extract old/new kernel/rootfs \
 to [old|new]_[kern|root].dat. Useful for debugging (default: false)"
-DEFINE_boolean full_kernel "$FLAGS_FALSE" "Generate a full kernel update even \
-if generating a delta update (default: false)"
 
 # Parse command line
 FLAGS "$@" || exit 1
 eval set -- "${FLAGS_ARGV}"
 
 set -e
+
+locate_gpt
+legacy_offset_size_export ${FLAGS_image}
 
 if [ -n "$FLAGS_src_image" ] && \
    [ "$FLAGS_outside_chroot" -eq "$FLAGS_FALSE" ]; then
@@ -164,10 +141,10 @@ locate_gpt
 
 if [ "$FLAGS_extract" -eq "$FLAGS_TRUE" ]; then
   if [ -n "$FLAGS_src_image" ]; then
-    extract_kern_root "$FLAGS_src_image" old_kern.dat old_root.dat
+    extract_root "$FLAGS_src_image" old_root.dat
   fi
   if [ -n "$FLAGS_image" ]; then
-    extract_kern_root "$FLAGS_image" new_kern.dat new_root.dat
+    extract_root "$FLAGS_image" new_root.dat
   fi
   echo Done extracting kernel/root
   exit 0
@@ -187,27 +164,14 @@ GENERATOR="$(which delta_generator)"
 
 trap cleanup INT TERM EXIT
 if [ "$DELTA" -eq "$FLAGS_TRUE" ]; then
-  if [ "$FLAGS_full_kernel" -eq "$FLAGS_FALSE" ]; then
-    SRC_KERNEL=$(extract_partition_to_temp_file "$FLAGS_src_image" 2)
-    if [ "$FLAGS_patch_kernel" -eq "$FLAGS_TRUE" ]; then
-      patch_kernel "$FLAGS_src_image" "$SRC_KERNEL"
-    fi
-    echo md5sum of src kernel:
-    md5sum "$SRC_KERNEL"
-  else
-    echo "Generating a full kernel update."
-  fi
-  SRC_ROOT=$(extract_partition_to_temp_file "$FLAGS_src_image" 3)
+  SRC_ROOT=$(extract_partition_to_temp_file "$FLAGS_src_image" ${NUM_ROOTFS_A})
 
   echo md5sum of src root:
   md5sum "$SRC_ROOT"
 fi
 
-DST_KERNEL=$(extract_partition_to_temp_file "$FLAGS_image" 2)
-if [ "$FLAGS_patch_kernel" -eq "$FLAGS_TRUE" ]; then
-  patch_kernel "$FLAGS_image" "$DST_KERNEL"
-fi
-DST_ROOT=$(extract_partition_to_temp_file "$FLAGS_image" 3)
+
+DST_ROOT=$(extract_partition_to_temp_file "$FLAGS_image" ${NUM_ROOTFS_A})
 
 if [ "$DELTA" -eq "$FLAGS_TRUE" ]; then
   SRC_MNT=$(mktemp -d /tmp/src_root.XXXXXX)
@@ -217,12 +181,12 @@ if [ "$DELTA" -eq "$FLAGS_TRUE" ]; then
   sudo mount -o loop,ro "$DST_ROOT" "$DST_MNT"
 
   sudo LD_LIBRARY_PATH=${LD_LIBRARY_PATH}  PATH=${PATH} "$GENERATOR" \
-      -new_dir "$DST_MNT" -new_image "$DST_ROOT" -new_kernel "$DST_KERNEL" \
+      -new_dir "$DST_MNT" -new_image "$DST_ROOT" \
       -old_dir "$SRC_MNT" -old_image "$SRC_ROOT" -old_kernel "$SRC_KERNEL" \
       -out_file "$FLAGS_output" -private_key "$FLAGS_private_key"
 else
   "$GENERATOR" \
-      -new_image "$DST_ROOT" -new_kernel "$DST_KERNEL" \
+      -new_image "$DST_ROOT" \
       -out_file "$FLAGS_output" -private_key "$FLAGS_private_key"
 fi
 

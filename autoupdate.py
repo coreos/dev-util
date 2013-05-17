@@ -310,9 +310,6 @@ class Autoupdate(BuildObject):
     if src_image:
       update_command.extend(['--src_image', src_image])
 
-    if not self.vm:
-      update_command.append('--patch_kernel')
-
     if self.private_key:
       update_command.extend(['--private_key', self.private_key])
 
