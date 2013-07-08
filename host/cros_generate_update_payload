@@ -30,7 +30,6 @@ find_common_sh() {
 
 find_common_sh
 . "${SCRIPT_ROOT}/common.sh" || exit 1
-. /usr/lib/installer/chromeos-common.sh || exit 1
 
 # Load functions and constants for chromeos-install
 # NOTE: Needs to be called from outside the chroot.
