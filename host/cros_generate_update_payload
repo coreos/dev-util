@@ -112,8 +112,10 @@ DEFINE_string image "" "The image that should be sent to clients."
 DEFINE_string src_image "" "Optional: a source image. If specified, this makes\
  a delta update."
 DEFINE_string output "" "Output file"
+DEFINE_string metadata_output "" "Output file for metadata payload"
 DEFINE_boolean outside_chroot "$FLAGS_FALSE" "Running outside of chroot."
 DEFINE_string private_key "" "Path to private key in .pem format."
+DEFINE_string public_key "" "Path to public key in .pem format."
 DEFINE_boolean extract "$FLAGS_FALSE" "If set, extract old/new kernel/rootfs \
 to [old|new]_[kern|root].dat. Useful for debugging (default: false)"
 
@@ -152,6 +154,9 @@ fi
 [ -n "$FLAGS_output" ] ||
   die "Error: you must specify an output filename with --output FILENAME"
 
+[ -n "$FLAGS_metadata_output" ] ||
+  die "Error: you must specify a metadata file with --metadata_output FILENAME"
+
 DELTA=$FLAGS_TRUE
 [ -z "$FLAGS_src_image" ] && DELTA=$FLAGS_FALSE
 
@@ -188,6 +193,17 @@ else
       -new_image "$DST_ROOT" \
       -out_file "$FLAGS_output" -private_key "$FLAGS_private_key"
 fi
+
+# Optionally verify the signature we just made
+if [ -n "$FLAGS_public_key" ]; then
+  "$GENERATOR" -in_file "$FLAGS_output" -public_key "$FLAGS_public_key"
+fi
+
+# Generate the metadata payload
+"$GENERATOR" \
+    -out_metadata "$FLAGS_metadata_output" \
+    -private_key "$FLAGS_private_key" \
+    -in_file "$FLAGS_output"
 
 trap - INT TERM EXIT
 cleanup noexit
