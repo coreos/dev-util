@@ -154,9 +154,6 @@ fi
 [ -n "$FLAGS_output" ] ||
   die "Error: you must specify an output filename with --output FILENAME"
 
-[ -n "$FLAGS_metadata_output" ] ||
-  die "Error: you must specify a metadata file with --metadata_output FILENAME"
-
 DELTA=$FLAGS_TRUE
 [ -z "$FLAGS_src_image" ] && DELTA=$FLAGS_FALSE
 
@@ -200,10 +197,12 @@ if [ -n "$FLAGS_public_key" ]; then
 fi
 
 # Generate the metadata payload
-"$GENERATOR" \
+if [ -n "$FLAGS_metadata_output" ]; then
+  "$GENERATOR" \
     -out_metadata "$FLAGS_metadata_output" \
     -private_key "$FLAGS_private_key" \
     -in_file "$FLAGS_output"
+fi
 
 trap - INT TERM EXIT
 cleanup noexit
