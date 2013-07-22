@@ -120,7 +120,7 @@ class Autoupdate(BuildObject):
   Members:
     serve_only:      serve only pre-built updates. static_dir must contain
                      update.gz and stateful.tgz.
-    use_test_image:  use chromiumos_test_image.bin rather than the standard.
+    use_test_image:  use coreos_test_image.bin rather than the standard.
     urlbase:         base URL, other than devserver, for update images.
     forced_image:    path to an image to use for all updates.
     payload_path:    path to pre-generated payload to serve.
@@ -270,9 +270,9 @@ class Autoupdate(BuildObject):
   def _GetImageName(self):
     """Returns the name of the image that should be used."""
     if self.use_test_image:
-      image_name = 'chromiumos_test_image.bin'
+      image_name = 'coreos_test_image.bin'
     else:
-      image_name = 'chromiumos_image.bin'
+      image_name = 'coreos_image.bin'
 
     return image_name
 

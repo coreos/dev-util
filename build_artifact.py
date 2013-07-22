@@ -21,7 +21,7 @@ FIRMWARE_ARCHIVE = 'firmware_from_source.tar.bz2'
 IMAGE_ARCHIVE = 'image.zip'
 ROOT_UPDATE = 'update.gz'
 STATEFUL_UPDATE = 'stateful.tgz'
-TEST_IMAGE = 'chromiumos_test_image.bin'
+TEST_IMAGE = 'coreos_test_image.bin'
 TEST_SUITES_PACKAGE = 'test_suites.tar.bz2'
 AU_SUITE_PACKAGE = 'au_control.tar.bz2'
 
