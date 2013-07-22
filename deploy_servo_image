@@ -24,13 +24,13 @@ select_source_url() {
 
   # Older builds keep a collection of files in a ZIP archive named
   # "image.zip".  More recent builds also have an archive named
-  # "chromiumos_test_image.zip" with just the test image in it.  The
+  # "coreos_test_image.zip" with just the test image in it.  The
   # individual test image ZIP archive is smaller, so we prefer that
   # one when we have a choice.
   #
   local url_base="gs://chromeos-image-archive/$board-release/$build"
   local url_fullzip="$url_base/image.zip"
-  local url_singlezip="$url_base/chromiumos_test_image.zip"
+  local url_singlezip="$url_base/coreos_test_image.zip"
 
   if gsutil getacl "$url_singlezip" >/dev/null 2>&1; then
     echo "$url_singlezip"
@@ -56,7 +56,7 @@ deploy_image() {
 
   local url=$(select_source_url "$build" "$board")
   local zip="$image_dir/image.zip"
-  local bin=chromiumos_test_image.bin
+  local bin=coreos_test_image.bin
 
   mkdir -p "$image_dir"
   gsutil cp "$url" "$zip"

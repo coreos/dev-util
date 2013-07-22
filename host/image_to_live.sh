@@ -128,13 +128,13 @@ start_dev_server() {
   elif [ -n "${FLAGS_archive_dir}" ]; then
     devserver_flags="${devserver_flags} \
         --archive_dir $(reinterpret_path_for_chroot ${FLAGS_archive_dir}) -t"
-    IMAGE_PATH="${FLAGS_archive_dir}/chromiumos_test_image.bin"
+    IMAGE_PATH="${FLAGS_archive_dir}/coreos_test_image.bin"
   else
     # IMAGE_PATH should be the newest image and learn the board from
     # the target.
     learn_board
     IMAGE_PATH="$(${SCRIPTS_DIR}/get_latest_image.sh --board="${FLAGS_board}")"
-    IMAGE_PATH="${IMAGE_PATH}/chromiumos_image.bin"
+    IMAGE_PATH="${IMAGE_PATH}/coreos_image.bin"
     devserver_flags="${devserver_flags} \
         --image $(reinterpret_path_for_chroot ${IMAGE_PATH})"
   fi

@@ -13,7 +13,7 @@
 #
 # For internally-consistent terminology:
 #   archive: a zip file with multiple images
-#   image: a single .bin file; e.g. 'chromiumos_test_image.bin'
+#   image: a single .bin file; e.g. 'coreos_test_image.bin'
 #   variant: the human name for a single image; e.g. 'test'
 #
 
@@ -69,11 +69,11 @@ fi
 requested_images=()
 for variant in "$@"; do
   case ${variant} in
-    base) image='chromiumos_base_image.bin' ;;
-    dev)  image='chromiumos_image.bin' ;;
-    qemu) image='chromiumos_qemu_image.bin' ;;
+    base) image='coreos_base_image.bin' ;;
+    dev)  image='coreos_image.bin' ;;
+    qemu) image='coreos_qemu_image.bin' ;;
     recovery) image='recovery_image.bin' ;;
-    test) image='chromiumos_test_image.bin' ;;
+    test) image='coreos_test_image.bin' ;;
     *) die "Unknown image variant '${$variant}'"
   esac
   requested_images+=( "${image}" )
@@ -81,7 +81,7 @@ done
 if [[ ${#requested_images[@]} -eq 0 ]]; then
   warn "No image variants specified on the command line;" \
        "assuming the test image."
-  requested_images=( 'chromiumos_test_image.bin' )
+  requested_images=( 'coreos_test_image.bin' )
 fi
 
 echo 'Searching for matching archives...' >&2

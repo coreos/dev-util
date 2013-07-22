@@ -328,7 +328,7 @@ def PrepareBuildDirectory(build_dir):
   if not os.path.isdir(build_dir):
     os.path.makedirs(build_dir)
 
-  # Create blank chromiumos_test_image.bin. Otherwise the Dev Server will
+  # Create blank coreos_test_image.bin. Otherwise the Dev Server will
   # try to rebuild it unnecessarily.
   test_image = os.path.join(build_dir, build_artifact.TEST_IMAGE)
   open(test_image, 'a').close()

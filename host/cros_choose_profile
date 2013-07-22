@@ -48,7 +48,7 @@ fi
 get_board_and_variant $FLAGS_board $FLAGS_variant
 
 BOARD_ROOT="/build/${BOARD_VARIANT}"
-CHROMIUMOS_OVERLAY="/usr/local/portage/chromiumos"
+CHROMIUMOS_OVERLAY="/usr/local/portage/coreos"
 CHROMIUMOS_PROFILES="${CHROMIUMOS_OVERLAY}/profiles"
 MAKE_PROFILE="${BOARD_ROOT}/etc/make.profile"
 
@@ -104,7 +104,7 @@ if [ -z "${PROFILES_DIR}" ]; then
   done
 
   # Then, if we are looking for the default profile, we look in the
-  # chromiumos-overlay as well.
+  # coreos-overlay as well.
   CHROMEOS_PROFILE="${CHROMIUMOS_PROFILES}/default/linux/${ARCH}/10.0/coreos/"
 
   if [ "${PROFILE_NAME}" == "base" ]; then

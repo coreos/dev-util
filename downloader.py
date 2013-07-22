@@ -331,8 +331,8 @@ class ImagesDownloader(Downloader):
 
   # A mapping from test image types to their archived file names.
   _IMAGE_TO_FNAME = {
-    'test': 'chromiumos_test_image.bin',
-    'base': 'chromiumos_base_image.bin',
+    'test': 'coreos_test_image.bin',
+    'base': 'coreos_base_image.bin',
     'recovery': 'recovery_image.bin',
   }
 
