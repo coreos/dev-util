@@ -459,7 +459,7 @@ run_once() {
     info "New updated in ${known_hosts}, backup made."
   fi
 
-  remote_sh "grep ^CHROMEOS_RELEASE_DESCRIPTION= /etc/lsb-release"
+  remote_sh "grep ^COREOS_RELEASE_DESCRIPTION= /etc/lsb-release"
   if [ ${FLAGS_verify} -eq ${FLAGS_TRUE} ]; then
     verify_image
 

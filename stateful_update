@@ -45,15 +45,15 @@ update_dev_image () {
     base_update_url=$(remove_quotes "${FLAGS_ARGV}")
   else
     if [ -f "${STATEFUL_DIR}${LSB_RELEASE}" ]; then
-      devserver_url=$(grep CHROMEOS_DEVSERVER ${STATEFUL_DIR}${LSB_RELEASE} |
+      devserver_url=$(grep COREOS_DEVSERVER ${STATEFUL_DIR}${LSB_RELEASE} |
           cut -f 2 -d '=')
     fi
     if [ -z "${devserver_url}" ]; then
-      devserver_url=$(grep CHROMEOS_DEVSERVER ${LSB_RELEASE} | cut -f 2 -d '=')
+      devserver_url=$(grep COREOS_DEVSERVER ${LSB_RELEASE} | cut -f 2 -d '=')
     fi
     # Sanity check.
     if [ -z "${devserver_url}" ]; then
-      echo >&2 "No CHROMEOS_DEVSERVER URL found in lsb-release file"
+      echo >&2 "No COREOS_DEVSERVER URL found in lsb-release file"
       exit 1
     fi
     # Devserver URL should never contain "/update"

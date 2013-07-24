@@ -14,8 +14,8 @@ EMERGE_PACKAGES="${P_CONFIG_CROS}/bootstrap.packages"
 
 # Global variables.
 BINHOST=
-CHROMEOS_DEVSERVER=
-CHROMEOS_RELEASE_BOARD=
+COREOS_DEVSERVER=
+COREOS_RELEASE_BOARD=
 
 # Process flags.
 . /usr/share/misc/shflags || exit 1
@@ -68,12 +68,12 @@ get_binhost() {
   local reply
   if [ -n "${FLAGS_binhost}" ]; then
     BINHOST="${FLAGS_binhost}"
-  elif [ -n "${CHROMEOS_DEVSERVER}" ]; then
-    echo "Devserver URL set to:  ${CHROMEOS_DEVSERVER}"
+  elif [ -n "${COREOS_DEVSERVER}" ]; then
+    echo "Devserver URL set to:  ${COREOS_DEVSERVER}"
     read -p "Use it as the binhost? (y/n)?" reply
     if [ "${reply}" = "y" ]; then
-      local packages_path="static/pkgroot/${CHROMEOS_RELEASE_BOARD}/packages"
-      BINHOST="${CHROMEOS_DEVSERVER}/${packages_path}"
+      local packages_path="static/pkgroot/${COREOS_RELEASE_BOARD}/packages"
+      BINHOST="${COREOS_DEVSERVER}/${packages_path}"
     fi
   fi
   if [ -z "${BINHOST}" ]; then
@@ -89,7 +89,7 @@ get_binhost() {
       # Chrome version looks like (Google Chrome/Chromium) branch.0.a.b
       local cr_branch="$(echo "${cr_version}" |
           sed -r 's/.*[[:space:]]([0-9]+)\..*/\1/')"
-      local version="$(get_lsb_var /etc/lsb-release CHROMEOS_RELEASE_VERSION)"
+      local version="$(get_lsb_var /etc/lsb-release COREOS_RELEASE_VERSION)"
       release_number="R${cr_branch}-${version}"
     fi
     BINHOST="${PREFIX_BINHOST}canary-${release_number}/packages"
@@ -178,15 +178,15 @@ install_optional_packages() {
 
 import_lsb_release() {
   local override
-  CHROMEOS_DEVSERVER=$(get_lsb_var /etc/lsb-release CHROMEOS_DEVSERVER)
-  CHROMEOS_RELEASE_BOARD=$(get_lsb_var /etc/lsb-release CHROMEOS_RELEASE_BOARD)
+  COREOS_DEVSERVER=$(get_lsb_var /etc/lsb-release COREOS_DEVSERVER)
+  COREOS_RELEASE_BOARD=$(get_lsb_var /etc/lsb-release COREOS_RELEASE_BOARD)
 
   # Check local overrides.
   if [ -f /usr/local/etc/lsb-release ]; then
-    override=$(get_lsb_var /usr/local/etc/lsb-release CHROMEOS_DEVSERVER)
-    [ -n "${override}" ] && CHROMEOS_DEVSERVER="${override}"
-    override=$(get_lsb_var /usr/local/etc/lsb-release CHROMEOS_RELEASE_BOARD)
-    [ -n "${override}" ] && CHROMEOS_RELEASE_BOARD="${override}"
+    override=$(get_lsb_var /usr/local/etc/lsb-release COREOS_DEVSERVER)
+    [ -n "${override}" ] && COREOS_DEVSERVER="${override}"
+    override=$(get_lsb_var /usr/local/etc/lsb-release COREOS_RELEASE_BOARD)
+    [ -n "${override}" ] && COREOS_RELEASE_BOARD="${override}"
   fi
 }
 
