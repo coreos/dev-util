@@ -168,7 +168,7 @@ def _RemoveDirectory(dirpath):
 def _DevUser():
   """Extract the user name from lsb-release."""
   # TODO(stevenjb): Refactor this using python re.
-  awk_expr  = """/CHROMEOS_RELEASE_DESCRIPTION/ {"""
+  awk_expr  = """/COREOS_RELEASE_DESCRIPTION/ {"""
   awk_expr += """ sub(/.*Build - /,"");"""
   awk_expr += """ sub(/\).*/,"");"""
   awk_expr += """ print; }"""
@@ -178,7 +178,7 @@ def _DevUser():
 def _DevHost():
   """Extract the host name from lsb-release."""
   # TODO(stevenjb): Refactor this using python re.
-  awk_expr  = """/CHROMEOS_DEVSERVER/ {"""
+  awk_expr  = """/COREOS_DEVSERVER/ {"""
   awk_expr += """ sub(/.*http:\/\//,"");"""
   awk_expr += """ sub(/:8080.*/,"");"""
   awk_expr += """ print; }"""
@@ -188,7 +188,7 @@ def _DevHost():
 def _DevBoard():
   """Extract the board from lsb-release."""
   # TODO(stevenjb): Refactor this using python re.
-  awk_expr  = """/CHROMEOS_RELEASE_BOARD/ {"""
+  awk_expr  = """/COREOS_RELEASE_BOARD/ {"""
   awk_expr += """ sub(/.*=/,"");"""
   awk_expr += """ print; }"""
   return _GetCommandOutput(["awk", awk_expr, "/etc/lsb-release"])

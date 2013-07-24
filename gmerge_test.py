@@ -22,13 +22,13 @@ class GMergeTest(unittest.TestCase):
 
   def setUp(self):
     self.lsb_release_lines = [
-        'CHROMEOS_RELEASE_BOARD=x86-mario\r\n',
-        'CHROMEOS_DEVSERVER=http://localhost:8080/\n']
+        'COREOS_RELEASE_BOARD=x86-mario\r\n',
+        'COREOS_DEVSERVER=http://localhost:8080/\n']
 
   def testLsbRelease(self):
     merger = gmerge.GMerger(self.lsb_release_lines)
-    self.assertEqual({'CHROMEOS_RELEASE_BOARD': 'x86-mario',
-                      'CHROMEOS_DEVSERVER': 'http://localhost:8080/'},
+    self.assertEqual({'COREOS_RELEASE_BOARD': 'x86-mario',
+                      'COREOS_DEVSERVER': 'http://localhost:8080/'},
                      merger.lsb_release)
 
   def testPostData(self):

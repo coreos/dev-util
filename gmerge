@@ -31,8 +31,8 @@ class GMerger(object):
   def __init__(self, lsb_release_lines):
     self.lsb_release = self.ParseLsbRelease(lsb_release_lines)
     try:
-      self.devkit_url = self.lsb_release['CHROMEOS_DEVSERVER']
-      self.board_name = self.lsb_release['CHROMEOS_RELEASE_BOARD']
+      self.devkit_url = self.lsb_release['COREOS_DEVSERVER']
+      self.board_name = self.lsb_release['COREOS_RELEASE_BOARD']
     except KeyError, e:
       sys.exit('Could not find /etc/lsb_release value: ' + e)
 

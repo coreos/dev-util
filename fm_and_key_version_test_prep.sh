@@ -158,9 +158,9 @@ done
 
 # Get the OS version
 LSB_RELEASE="${ROOT_FS_DIR}/etc/lsb-release"
-CHROMEOS_VER=$(grep ^"CHROMEOS_RELEASE_VERSION" ${LSB_RELEASE} | cut -d = -f 2-)
-CHROMEOS_VER_PREFIX=${CHROMEOS_VER%?}
-CHROMEOS_TRACK=$(grep ^"CHROMEOS_RELEASE_TRACK" ${LSB_RELEASE} | cut -d = -f 2-)
+COREOS_VER=$(grep ^"COREOS_RELEASE_VERSION" ${LSB_RELEASE} | cut -d = -f 2-)
+COREOS_VER_PREFIX=${COREOS_VER%?}
+COREOS_TRACK=$(grep ^"COREOS_RELEASE_TRACK" ${LSB_RELEASE} | cut -d = -f 2-)
 
 cleanup
 
@@ -185,17 +185,17 @@ mkdir "${PAYLOAD_DIR}"
 # Create a copy of the test image that will be convert to a payload.
 for i in $(seq 1 1 ${ITERATIONS})
 do
-  NEW_IMAGE_NAME="chromiumos-key-image-${CHROMEOS_VER_PREFIX}${i}.bin"
+  NEW_IMAGE_NAME="chromiumos-key-image-${COREOS_VER_PREFIX}${i}.bin"
   cp "${WORKING_DIR}/${IMAGE_NAME}" "${WORKING_DIR}/${NEW_IMAGE_NAME}"
   "$SCRIPTS_DIR/mount_gpt_image.sh" -i "$NEW_IMAGE_NAME" -f "$WORKING_DIR" \
     -r "$ROOT_FS_DIR" -s "$STATEFUL_FS_DIR"
 
   info "Copying ${WORKING_UPDATER}-test${i} to ${IMAGE_UPDATER}"
   sudo cp ${WORKING_UPDATER}-test${i} ${IMAGE_UPDATER}
-  NEW_CHROME_VERSION=${CHROMEOS_VER_PREFIX}${i}
+  NEW_CHROME_VERSION=${COREOS_VER_PREFIX}${i}
 
   info "Updating chrome version to ${NEW_CHROME_VERSION}"
-  sudo sed -i "s/${CHROMEOS_VER}/${NEW_CHROME_VERSION}/g" \
+  sudo sed -i "s/${COREOS_VER}/${NEW_CHROME_VERSION}/g" \
     "${ROOT_FS_DIR}/etc/lsb-release"
   sudo sed -i 's/tools/omaha.sandbox/g' "${ROOT_FS_DIR}/etc/lsb-release"
 
@@ -223,7 +223,7 @@ do
     "${KEYS_DIR}"/increment_firmware_data_key.sh "${KEYS_DIR}"
   fi
 
-  SIGNED_IMAGE_NAME="chromiumos-key-image-${CHROMEOS_VER_PREFIX}${i}_signed.bin"
+  SIGNED_IMAGE_NAME="chromiumos-key-image-${COREOS_VER_PREFIX}${i}_signed.bin"
 
   info "Resigning the image to ${SIGNED_IMAGE_NAME}..."
   cd ~/trunk/src/platform/vboot_reference
@@ -236,7 +236,7 @@ do
   info "Generating payload..."
   sudo cros_generate_update_payload \
     --image="${WORKING_DIR}/${SIGNED_IMAGE_NAME}" \
-    --output="${PAYLOAD_DIR}/chromeos_${CHROMEOS_VER_PREFIX}${i}\
+    --output="${PAYLOAD_DIR}/chromeos_${COREOS_VER_PREFIX}${i}\
 _${FLAGS_board}_testimage-channel_full_test.bin-000${i}.signed"
 done
 
