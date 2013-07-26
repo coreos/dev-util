@@ -130,7 +130,7 @@ configure_emerge() {
 
   # Create the directories defined in the portage config files. Permissions are
   # consistent with the other directories in /usr/local, which is a bind mount
-  # for /media/state/images/dev.
+  # for /media/state/overlays/usr/local
   mkdir -p -m 0755 "${PORTDIR}"
   mkdir -p -m 0755 "${PKGDIR}"
   mkdir -p -m 0755 "${DISTDIR}"
@@ -227,7 +227,7 @@ main() {
 
   # Create this loop so uncompressed files in /usr/local/usr/* will be reachable
   # through /usr/local*.
-  # Note: /usr/local is mount-binded onto the /media/state/images/dev
+  # Note: /usr/local is mount-binded onto the /media/state/overlays/usr/local
   # during chromeos_startup during boot for machines in dev_mode.
   if [ ! -d /usr/local/usr ]; then
     ln -s . /usr/local/usr
