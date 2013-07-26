@@ -24,7 +24,7 @@ OLD_STATE="old"
 RESET_STATE="reset"
 
 LSB_RELEASE="/etc/lsb-release"
-STATEFUL_DIR="/mnt/stateful_partition"
+STATEFUL_DIR="/media/state"
 UPDATE_STATE_FILE=".update_available"
 
 DEFINE_string stateful_change "${OLD_STATE}" \
@@ -68,8 +68,8 @@ update_dev_image () {
       tar --ignore-command-error --overwrite --directory=${STATEFUL_DIR} -xz
   echo >&2 "Successfully downloaded update"
 
-  if [ ! -d "${STATEFUL_DIR}/var_new" ] ||
-      [ ! -d "${STATEFUL_DIR}/dev_image_new" ]; then
+  if [ ! -d "${STATEFUL_DIR}/overlays/var_new" ] ||
+      [ ! -d "${STATEFUL_DIR}/images/dev_new" ]; then
     echo >&2 "Missing var or dev_image in stateful payload."
     return 1
   fi
@@ -78,8 +78,8 @@ update_dev_image () {
 reset_state () {
   echo >&2 "Resetting stateful update state."
   rm -f "${STATEFUL_DIR}/${UPDATE_STATE_FILE}"
-  rm -rf "${STATEFUL_DIR}/var_new"
-  rm -rf "${STATEFUL_DIR}/dev_image_new"
+  rm -rf "${STATEFUL_DIR}/overlays/var"
+  rm -rf "${STATEFUL_DIR}/images/dev_new"
 }
 
 update_old_state () {

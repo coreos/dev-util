@@ -87,7 +87,7 @@ REMOTE_ROOT_DIR="/build/${FLAGS_board}/gmergefs/${FLAGS_remote}"
 # Default is to install on stateful dev, otherwise install on root.
 REMOTE_RELATIVE_PATH=""
 [ ${FLAGS_onstatefuldev} -eq $FLAGS_TRUE ] && \
-  REMOTE_RELATIVE_PATH="mnt/stateful_partition/dev_image"
+  REMOTE_RELATIVE_PATH="media/state/images/dev"
 REMOTE_PATH="${REMOTE_ROOT_DIR}/${REMOTE_RELATIVE_PATH}"
 
 # Create directory for remote image
