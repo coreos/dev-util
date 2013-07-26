@@ -90,7 +90,7 @@ FLAGS_image=$(readlink -f "${FLAGS_image}")
 IMAGE_DIR="$(dirname "${FLAGS_image}")"
 IMAGE_NAME="$(basename "${FLAGS_image}")"
 RECOVERY_IMAGE="${FLAGS_to:-$IMAGE_DIR/$CHROMEOS_RECOVERY_IMAGE_NAME}"
-STATEFUL_DIR="${IMAGE_DIR}/stateful_partition"
+STATEFUL_DIR="${IMAGE_DIR}/state"
 
 echo "Creating decryption recovery image from ${FLAGS_image}"
 
