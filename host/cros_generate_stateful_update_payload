@@ -65,9 +65,8 @@ def GenerateStatefulPayload(image_path, output_directory, logger):
                              output_gz,
                              '--directory=%s' % stateful_dir,
                              '--hard-dereference',
-                             '--transform=s,^images/dev,images/dev_new,',
-                             '--transform=s,^overlays/var,overlays/var_new,',
-                             'images/dev',
+                             '--transform=s,^overlays,overlays_new,',
+                             'overlays/usr/local',
                              'overlays/var',
                             ])
     except:
