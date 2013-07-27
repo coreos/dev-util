@@ -272,7 +272,7 @@ class Autoupdate(BuildObject):
     if self.use_test_image:
       image_name = 'coreos_test_image.bin'
     else:
-      image_name = 'coreos_image.bin'
+      image_name = 'coreos_developer_image.bin'
 
     return image_name
 

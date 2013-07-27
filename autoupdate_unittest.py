@@ -53,7 +53,7 @@ class AutoupdateTest(mox.MoxTestBase):
         'event_type': 3
     }
     self.test_data = _TEST_REQUEST % self.test_dict
-    self.forced_image_path = '/path_to_force/coreos_image.bin'
+    self.forced_image_path = '/path_to_force/coreos_developer_image.bin'
     self.sha1 = 12345
     self.size = 54321
     self.url = 'http://%s/static/update.gz' % self.hostname
@@ -103,7 +103,7 @@ class AutoupdateTest(mox.MoxTestBase):
         os.path.join(self.build_root, self.test_board, self.latest_dir))
     au_mock.GenerateUpdateImageWithCache(
         os.path.join(self.build_root, self.test_board, self.latest_dir,
-                     'coreos_image.bin'),
+                     'coreos_developer_image.bin'),
         static_image_dir=self.static_image_dir).AndReturn('update.gz')
 
     self.mox.ReplayAll()

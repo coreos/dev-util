@@ -134,7 +134,7 @@ start_dev_server() {
     # the target.
     learn_board
     IMAGE_PATH="$(${SCRIPTS_DIR}/get_latest_image.sh --board="${FLAGS_board}")"
-    IMAGE_PATH="${IMAGE_PATH}/coreos_image.bin"
+    IMAGE_PATH="${IMAGE_PATH}/coreos_developer_image.bin"
     devserver_flags="${devserver_flags} \
         --image $(reinterpret_path_for_chroot ${IMAGE_PATH})"
   fi

@@ -70,8 +70,8 @@ requested_images=()
 for variant in "$@"; do
   case ${variant} in
     base) image='coreos_base_image.bin' ;;
-    dev)  image='coreos_image.bin' ;;
-    qemu) image='coreos_qemu_image.bin' ;;
+    dev)  image='coreos_developer_image.bin' ;;
+    qemu) image='coreos_developer_qemu_image.bin' ;;
     recovery) image='recovery_image.bin' ;;
     test) image='coreos_test_image.bin' ;;
     *) die "Unknown image variant '${$variant}'"
