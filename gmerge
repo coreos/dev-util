@@ -67,7 +67,7 @@ class GMerger(object):
         'PORTAGE_TMPDIR': '/tmp',
         'CONFIG_PROTECT': '-*',
         'FEATURES': '-sandbox',
-        'ACCEPT_KEYWORDS': 'arm x86 ~arm ~x86',
+        'ACCEPT_KEYWORDS': 'arm x86 amd64 ~arm ~x86 ~amd64',
         'ROOT': os.environ.get('ROOT', '/'),
         'PORTAGE_CONFIGROOT': '/usr/local'
         })
