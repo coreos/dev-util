@@ -60,16 +60,14 @@ class GMerger(object):
     if not FLAGS.include_masked_files:
       binhost += ' %s/gmerge-packages' % binhost_prefix
     environ.update({
-        'PORTDIR': '/usr/local/portage',
-        'PKGDIR': '/usr/local/portage',
-        'DISTDIR': '/usr/local/portage/distfiles',
+        'PKGDIR': '/var/tmp/portage',
+        'DISTDIR': '/var/tmp/portage/distfiles',
         'PORTAGE_BINHOST': binhost,
         'PORTAGE_TMPDIR': '/tmp',
         'CONFIG_PROTECT': '-*',
         'FEATURES': '-sandbox',
         'ACCEPT_KEYWORDS': '**',
         'ROOT': os.environ.get('ROOT', '/'),
-        'PORTAGE_CONFIGROOT': '/usr/local'
         })
 
   def GeneratePackageRequest(self, package_name):
