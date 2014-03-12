@@ -125,9 +125,6 @@ eval set -- "${FLAGS_ARGV}"
 
 set -e
 
-locate_gpt
-legacy_offset_size_export ${FLAGS_image}
-
 if [ -n "$FLAGS_src_image" ] && \
    [ "$FLAGS_outside_chroot" -eq "$FLAGS_FALSE" ]; then
   # We need to be in the chroot for generating delta images.
@@ -165,14 +162,14 @@ GENERATOR="$(which delta_generator)"
 
 trap cleanup INT TERM EXIT
 if [ "$DELTA" -eq "$FLAGS_TRUE" ]; then
-  SRC_ROOT=$(extract_partition_to_temp_file "$FLAGS_src_image" ${NUM_ROOTFS_A})
+  SRC_ROOT=$(extract_partition_to_temp_file "$FLAGS_src_image" 3)
 
   echo md5sum of src root:
   md5sum "$SRC_ROOT"
 fi
 
 
-DST_ROOT=$(extract_partition_to_temp_file "$FLAGS_image" ${NUM_ROOTFS_A})
+DST_ROOT=$(extract_partition_to_temp_file "$FLAGS_image" 3)
 
 if [ "$DELTA" -eq "$FLAGS_TRUE" ]; then
   SRC_MNT=$(mktemp -d /tmp/src_root.XXXXXX)

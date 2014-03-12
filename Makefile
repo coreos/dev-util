@@ -16,7 +16,6 @@ install:
 		autoupdate.py \
 		autoupdate_lib.py \
 		build_artifact.py \
-		build_util.py \
 		builder.py \
 		common_util.py \
 		constants.py \

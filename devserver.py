@@ -239,6 +239,26 @@ def _FindExposedMethods(root, prefix, unlisted=None):
   return method_list
 
 
+def _GetScriptsDir(devserver_dir):
+  """Return the path to src/scripts in the SDK"""
+
+  try:
+    return '%s/src/scripts' % os.environ['CROS_WORKON_SRCROOT']
+  except KeyError:
+    # Outside of chroot: This is a corner case. Since we live either in
+    # platform/dev or /usr/bin/, scripts have to live in ../../../src/scripts
+    return os.path.abspath(os.path.join(devserver_dir, '../../../src/scripts'))
+
+def _GetDefaultBoardID(scripts_dir):
+  """Returns the default board id stored in .default_board."""
+
+  board_file = '%s/.default_board' % (scripts_dir)
+  try:
+    return open(board_file).read()
+  except IOError:
+    return 'amd64-generic'
+
+
 class ApiRoot(object):
   """RESTful API for Dev Server information."""
   exposed = True
@@ -637,12 +657,17 @@ def _CleanCache(cache_dir, wipe):
 
 
 def main():
+  devserver_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+  scripts_dir = _GetScriptsDir(devserver_dir)
+  root_dir = os.path.realpath('%s/../..' % devserver_dir)
+  serve_only = False
+
   usage = 'usage: %prog [options]'
   parser = optparse.OptionParser(usage=usage)
   parser.add_option('--archive_dir',
                     metavar='PATH',
                     help='Enables serve-only mode. Serves archived builds only')
-  parser.add_option('--board',
+  parser.add_option('--board', default=_GetDefaultBoardID(scripts_dir),
                     help='when pre-generating update, board for latest image')
   parser.add_option('--clear_cache',
                     action='store_true', default=False,
@@ -709,10 +734,6 @@ def main():
                     help='base URL for update images, other than the devserver')
   (options, _) = parser.parse_args()
 
-  devserver_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-  root_dir = os.path.realpath('%s/../..' % devserver_dir)
-  serve_only = False
-
   static_dir = os.path.realpath('%s/static' % options.data_dir)
   os.system('mkdir -p %s' % static_dir)
 
@@ -738,7 +759,7 @@ def main():
   if serve_only:
     # Extra check to make sure we're not being called incorrectly.
     if (options.clear_cache or options.exit or options.pregenerate_update or
-        options.board or options.image):
+        options.image):
       parser.error('Incompatible flags detected for serve_only mode.')
 
   elif os.path.exists(cache_dir):
@@ -755,7 +776,8 @@ def main():
   # pylint: disable=W0603
   global updater
   updater = autoupdate.Autoupdate(
-      root_dir=root_dir,
+      devserver_dir=devserver_dir,
+      scripts_dir=scripts_dir,
       static_dir=static_dir,
       serve_only=serve_only,
       urlbase=options.urlbase,
