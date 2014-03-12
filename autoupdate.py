@@ -24,7 +24,6 @@ def _Log(message, *args):
 
 UPDATE_FILE = 'update.gz'
 METADATA_FILE = 'update.meta'
-STATEFUL_FILE = 'stateful.tgz'
 CACHE_DIR = 'cache'
 
 
@@ -119,7 +118,7 @@ class Autoupdate(BuildObject):
 
   Members:
     serve_only:      serve only pre-built updates. static_dir must contain
-                     update.gz and stateful.tgz.
+                     update.gz.
     use_test_image:  use coreos_test_image.bin rather than the standard.
     urlbase:         base URL, other than devserver, for update images.
     forced_image:    path to an image to use for all updates.
@@ -316,24 +315,6 @@ class Autoupdate(BuildObject):
     _Log('Running %s', ' '.join(update_command))
     subprocess.check_call(update_command)
 
-  @staticmethod
-  def GenerateStatefulFile(image_path, output_dir):
-    """Generates a stateful update payload given a full path to an image.
-
-    Args:
-      image_path: Full path to image.
-    Raises:
-      subprocess.CalledProcessError if the update generator fails to generate a
-      stateful payload.
-    """
-    update_command = [
-        'cros_generate_stateful_update_payload',
-        '--image', image_path,
-        '--output_dir', output_dir,
-    ]
-    _Log('Running %s', ' '.join(update_command))
-    subprocess.check_call(update_command)
-
   def FindCachedUpdateImageSubDir(self, src_image, dest_image):
     """Find directory to store a cached update.
 
@@ -381,7 +362,6 @@ class Autoupdate(BuildObject):
 
     try:
       self.GenerateUpdateFile(self.src_image, image_path, output_dir)
-      self.GenerateStatefulFile(image_path, output_dir)
     except subprocess.CalledProcessError:
       os.system('rm -rf "%s"' % output_dir)
       raise AutoupdateError('Failed to generate update in %s' % output_dir)
@@ -411,13 +391,10 @@ class Autoupdate(BuildObject):
     # The cached payloads exist in a cache dir
     cache_update_payload = os.path.join(static_image_dir,
                                         cache_sub_dir, UPDATE_FILE)
-    cache_stateful_payload = os.path.join(static_image_dir,
-                                          cache_sub_dir, STATEFUL_FILE)
 
     full_cache_dir = os.path.join(static_image_dir, cache_sub_dir)
     # Check to see if this cache directory is valid.
-    if not os.path.exists(cache_update_payload) or not os.path.exists(
-        cache_stateful_payload):
+    if not os.path.exists(cache_update_payload):
       self.GenerateUpdateImage(image_path, full_cache_dir)
 
     self.pregenerated_path = cache_sub_dir
@@ -431,11 +408,8 @@ class Autoupdate(BuildObject):
       # The final results exist directly in static
       update_payload = os.path.join(static_image_dir,
                                     UPDATE_FILE)
-      stateful_payload = os.path.join(static_image_dir,
-                                      STATEFUL_FILE)
       metadata_file = os.path.join(static_image_dir, METADATA_FILE)
       common_util.CopyFile(cache_update_payload, update_payload)
-      common_util.CopyFile(cache_stateful_payload, stateful_payload)
       common_util.CopyFile(cache_metadata_file, metadata_file)
       return None
     else:
@@ -482,25 +456,14 @@ class Autoupdate(BuildObject):
       AutoupdateError if it failed to generate the payload.
     """
     dest_path = os.path.join(static_image_dir, UPDATE_FILE)
-    dest_stateful = os.path.join(static_image_dir, STATEFUL_FILE)
 
     if self.payload_path:
       # If the forced payload is not already in our static_image_dir,
       # copy it there.
       src_path = os.path.abspath(self.payload_path)
-      src_stateful = os.path.join(os.path.dirname(src_path), STATEFUL_FILE)
       # Only copy the files if the source directory is different from dest.
       if os.path.dirname(src_path) != os.path.abspath(static_image_dir):
         common_util.CopyFile(src_path, dest_path)
-
-        # The stateful payload is optional.
-        if os.path.exists(src_stateful):
-          common_util.CopyFile(src_stateful, dest_stateful)
-        else:
-          _Log('WARN: %s not found. Expected for dev and test builds',
-               STATEFUL_FILE)
-          if os.path.exists(dest_stateful):
-            os.remove(dest_stateful)
 
       # Serve from the main directory so rel_path is None.
       return None
