@@ -11,7 +11,6 @@ import urlparse
 
 import cherrypy
 
-from build_util import BuildObject
 import autoupdate_lib
 import common_util
 import log_util
@@ -113,7 +112,7 @@ class UpdateMetadata(object):
     self.is_delta_format = is_delta_format
 
 
-class Autoupdate(BuildObject):
+class Autoupdate(object):
   """Class that contains functionality that handles Chrome OS update pings.
 
   Members:
@@ -149,8 +148,11 @@ class Autoupdate(BuildObject):
                proxy_port=None, src_image='', vm=False, board=None,
                copy_to_static_root=True, private_key=None,
                critical_update=False, remote_payload=False, max_updates= -1,
-               host_log=False, *args, **kwargs):
-    super(Autoupdate, self).__init__(*args, **kwargs)
+               host_log=False, devserver_dir=None, scripts_dir=None,
+               static_dir=None):
+    self.devserver_dir = devserver_dir,
+    self.scripts_dir = scripts_dir
+    self.static_dir = static_dir
     self.serve_only = serve_only
     self.use_test_image = test_image
     if urlbase:
@@ -213,14 +215,6 @@ class Autoupdate(BuildObject):
     metadata_file = os.path.join(payload_dir, METADATA_FILE)
     with open(metadata_file, 'w') as file_handle:
       json.dump(file_dict, file_handle)
-
-  def _GetDefaultBoardID(self):
-    """Returns the default board id stored in .default_board."""
-    board_file = '%s/.default_board' % (self.scripts_dir)
-    try:
-      return open(board_file).read()
-    except IOError:
-      return 'x86-generic'
 
   def _GetLatestImageDir(self, board):
     """Returns the latest image dir based on shell script."""
@@ -578,7 +572,7 @@ class Autoupdate(BuildObject):
       client_version = app.getAttribute('version')
       channel = app.getAttribute('track')
       board = (app.hasAttribute('board') and app.getAttribute('board')
-                  or self._GetDefaultBoardID())
+                  or self.board)
       # Add attributes to log message
       log_message['version'] = client_version
       log_message['track'] = channel
