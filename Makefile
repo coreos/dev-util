@@ -10,8 +10,10 @@ devserver:
 install:
 	mkdir -p "${DESTDIR}/usr/bin"
 	mkdir -p "${DESTDIR}/usr/lib/devserver"
+	mkdir -p "${DESTDIR}/usr/lib/installer"
 	install -m 0755 host/start_devserver "${DESTDIR}/usr/bin"
 	install -m 0755 devserver.py "${DESTDIR}/usr/lib/devserver"
+	install -m 0755 chromeos-common.sh "${DESTDIR}/usr/lib/installer"
 	install -m 0644  \
 		autoupdate.py \
 		autoupdate_lib.py \
