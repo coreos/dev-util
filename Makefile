@@ -17,11 +17,9 @@ install:
 	install -m 0644  \
 		autoupdate.py \
 		autoupdate_lib.py \
-		build_artifact.py \
 		builder.py \
 		common_util.py \
 		constants.py \
-		downloader.py \
 		gsutil_util.py \
 		log_util.py \
 		strip_package.py \

@@ -13,7 +13,6 @@ that package on the local machine.
 
 import optparse
 import os
-import shutil
 import subprocess
 import sys
 import urllib
@@ -21,36 +20,20 @@ import urllib2
 
 
 class GMerger(object):
-  """emerges a package from the devserver.
+  """emerges a package from the devserver."""
 
-  NB:  Must be instantiated using with, e.g.:
-    with GMerger(open('/etc/lsb-release').readlines()) as merger:
-  in order to remount /tmp as executable.
-  """
-
-  def __init__(self, lsb_release_lines):
-    self.lsb_release = self.ParseLsbRelease(lsb_release_lines)
+  def __init__(self, conf_lines):
+    self.update_conf = self.ParseUpdateConf(conf_lines)
     try:
-      self.devkit_url = self.lsb_release['COREOS_DEVSERVER']
-      self.board_name = self.lsb_release['COREOS_RELEASE_BOARD']
+      self.devkit_url = self.update_conf['DEVSERVER']
+      self.board_name = self.update_conf['COREOS_RELEASE_BOARD']
     except KeyError, e:
-      sys.exit('Could not find /etc/lsb_release value: ' + e)
+      sys.exit('Could not find /etc/coreos/update.conf value: ' + e)
 
-  def RemountOrChangeRoot(self, environ):
-    """Remount the root filesystem rw; install into /usr/local if this fails."""
-    rc = subprocess.call(['mount', '-o', 'remount,rw', '/'])
-    if rc == 0:
-      return
-    answer = raw_input(
-        'Could not mount / as writable.  Install into /usr/local? (Y/n)')
-    if answer[0] not in 'Yy':
-      sys.exit('Better safe than sorry.')
-    environ['ROOT'] = '/usr/local'
-
-  def ParseLsbRelease(self, lsb_release_lines):
+  def ParseUpdateConf(self, conf_lines):
     """Convert a list of KEY=VALUE lines to a dictionary."""
     partitioned_lines = [line.rstrip().partition('=')
-                         for line in lsb_release_lines]
+                         for line in conf_lines]
     return dict([(fields[0], fields[2]) for fields in partitioned_lines])
 
   def SetupPortageEnvironment(self, environ):
@@ -63,11 +46,9 @@ class GMerger(object):
         'PKGDIR': '/var/tmp/portage',
         'DISTDIR': '/var/tmp/portage/distfiles',
         'PORTAGE_BINHOST': binhost,
-        'PORTAGE_TMPDIR': '/tmp',
+        'PORTAGE_TMPDIR': '/var/tmp',
         'CONFIG_PROTECT': '-*',
-        'FEATURES': '-sandbox',
         'ACCEPT_KEYWORDS': '**',
-        'ROOT': os.environ.get('ROOT', '/'),
         })
 
   def GeneratePackageRequest(self, package_name):
@@ -133,25 +114,22 @@ def main():
 
   package_name = remaining_arguments[0]
 
-  try:
-    subprocess.check_call(['mount', '-o', 'remount,exec', '/tmp'])
-    merger = GMerger(open('/etc/lsb-release').readlines())
-    merger.RequestPackageBuild(package_name)
+  with open('/usr/share/coreos/release') as conf:
+    conf_data = conf.readlines()
+  with open('/etc/coreos/update.conf') as conf:
+    conf_data += conf.readlines()
+  merger = GMerger(conf_data)
+  merger.RequestPackageBuild(package_name)
 
-    print 'Emerging ', package_name
-    merger.SetupPortageEnvironment(os.environ)
-    merger.RemountOrChangeRoot(os.environ)
-    subprocess.check_call(['rm', '-rf', '/usr/local/portage',
-                           '/var/cache/edb/binhost'])
-    emerge_args = 'emerge --getbinpkgonly --usepkgonly --verbose'
-    if FLAGS.deep:
-      emerge_args += ' --update --deep'
-    if FLAGS.extra:
-      emerge_args += ' ' + FLAGS.extra
-    emerge_args += ' ' + package_name
-    subprocess.check_call(emerge_args, shell=True)
-  finally:
-    subprocess.call(['mount', '-o', 'remount,noexec', '/tmp'])
+  print 'Emerging ', package_name
+  merger.SetupPortageEnvironment(os.environ)
+  emerge_args = 'emerge --getbinpkgonly --usepkgonly --verbose'
+  if FLAGS.deep:
+    emerge_args += ' --update --deep'
+  if FLAGS.extra:
+    emerge_args += ' ' + FLAGS.extra
+  emerge_args += ' ' + package_name
+  subprocess.check_call(emerge_args, shell=True)
 
 
 if __name__ == '__main__':
