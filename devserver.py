@@ -548,6 +548,7 @@ def _CleanCache(cache_dir, wipe):
 
 
 def main():
+  devkey = "/usr/share/update_engine/update-payload-key.key.pem"
   devserver_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
   scripts_dir = _GetScriptsDir(devserver_dir)
   root_dir = os.path.realpath('%s/../..' % devserver_dir)
@@ -603,7 +604,7 @@ def main():
                     default=8080, type='int',
                     help='port for the dev server to use (default: 8080)')
   parser.add_option('--private_key',
-                    metavar='PATH', default=None,
+                    metavar='PATH', default=devkey,
                     help='path to the private key in pem format')
   parser.add_option('--production',
                     action='store_true', default=False,
