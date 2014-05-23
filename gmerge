@@ -28,7 +28,7 @@ class GMerger(object):
       self.devkit_url = self.update_conf['DEVSERVER']
       self.board_name = self.update_conf['COREOS_RELEASE_BOARD']
     except KeyError, e:
-      sys.exit('Could not find /etc/coreos/update.conf value: ' + e)
+      sys.exit('Could not find /etc/coreos/update.conf value: ' + e.message)
 
   def ParseUpdateConf(self, conf_lines):
     """Convert a list of KEY=VALUE lines to a dictionary."""
