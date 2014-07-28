@@ -1,0 +1,40 @@
+#!/usr/bin/python
+
+from __future__ import print_function
+
+import os
+import shutil
+import subprocess
+import sys
+
+import portage
+
+synced = False
+eroot = portage.settings['EROOT']
+for repo in portage.db[eroot]['vartree'].settings.repositories:
+	if repo.sync_type != 'git':
+		continue
+
+	print(">>> Cloning repository '%s' from '%s'..." % (repo.name, repo.sync_uri))
+
+	if os.path.isdir(repo.location):
+		shutil.rmtree(repo.location)
+	elif os.path.lexists(repo.location):
+		os.unlink(repo.location)
+
+	print('>>> Starting git clone in %s' % repo.location)
+	os.umask(0o022)
+	subprocess.check_call(['git', 'clone', repo.sync_uri, repo.location])
+	print('>>> Git clone in %s successful' % repo.location)
+	synced = True
+
+if synced:
+	# Perform normal post-sync tasks
+	configroot = portage.settings['PORTAGE_CONFIGROOT']
+	post_sync = '%s/etc/portage/bin/post_sync' % configroot
+	if os.path.exists(post_sync):
+		subprocess.check_call([post_sync])
+	subprocess.check_call(['emerge', '--check-news', '--quiet'])
+else:
+	sys.stderr.write('>>> No git repositories configured.\n')
+	sys.exit(1)
