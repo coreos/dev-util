@@ -161,7 +161,7 @@ def UpdateGmergeBinhost(board, pkg, deep):
     env_copy['PKGDIR'] = gmerge_pkgdir
     env_copy['ROOT'] = root
     env_copy['PORTAGE_CONFIGROOT'] = root
-    cmd = ['/usr/lib/portage/bin/emaint', '-f', 'binhost']
+    cmd = ['/usr/sbin/emaint', '-f', 'binhost']
     subprocess.check_call(cmd, env=env_copy)
 
   return bool(installed_matches)
