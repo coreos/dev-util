@@ -4,6 +4,7 @@
 
 import json
 import os
+import errno
 import re
 import subprocess
 import time
@@ -23,7 +24,9 @@ def _Log(message, *args):
 
 
 UPDATE_FILE = 'update.gz'
+KERNEL_UPDATE_FILE = 'kernel_update.gz'
 METADATA_FILE = 'update.meta'
+KERNEL_METADATA_FILE = 'kernel_update.meta'
 CACHE_DIR = 'cache'
 
 
@@ -199,21 +202,27 @@ class Autoupdate(object):
     return UpdateMetadata(sha1, sha256, size, is_delta)
 
   @staticmethod
-  def _ReadMetadataFromFile(payload_dir):
+  def _ReadMetadataFromFile(payload_dir, legacy_image):
     """Returns metadata object from the metadata_file in the payload_dir"""
-    metadata_file = os.path.join(payload_dir, METADATA_FILE)
+    if legacy_image:
+      metadata_file = os.path.join(payload_dir, METADATA_FILE)
+    else:
+      metadata_file = os.path.join(payload_dir, KERNEL_METADATA_FILE)
     if os.path.exists(metadata_file):
       with open(metadata_file, 'r') as metadata_stream:
         return Autoupdate._ReadMetadataFromStream(metadata_stream)
 
   @classmethod
-  def _StoreMetadataToFile(cls, payload_dir, metadata_obj):
+  def _StoreMetadataToFile(cls, payload_dir, metadata_obj, legacy_image):
     """Stores metadata object into the metadata_file of the payload_dir"""
     file_dict = {cls.SHA1_ATTR: metadata_obj.sha1,
                  cls.SHA256_ATTR: metadata_obj.sha256,
                  cls.SIZE_ATTR: metadata_obj.size,
                  cls.ISDELTA_ATTR: metadata_obj.is_delta_format}
-    metadata_file = os.path.join(payload_dir, METADATA_FILE)
+    if legacy_image:
+      metadata_file = os.path.join(payload_dir, METADATA_FILE)
+    else:
+      metadata_file = os.path.join(payload_dir, KERNEL_METADATA_FILE)
     with open(metadata_file, 'w') as file_handle:
       json.dump(file_dict, file_handle)
 
@@ -264,7 +273,8 @@ class Autoupdate(object):
       # used in update_engine at all as of now.
       return False
 
-  def GenerateUpdateFile(self, src_image, image_path, output_dir):
+  def GenerateUpdateFile(self, src_image, image_path, output_dir,
+                         legacy_image):
     """Generates an update gz given a full path to an image.
 
     Args:
@@ -273,7 +283,10 @@ class Autoupdate(object):
       subprocess.CalledProcessError if the update generator fails to generate a
       stateful payload.
     """
-    update_path = os.path.join(output_dir, UPDATE_FILE)
+    if legacy_image:
+      update_path = os.path.join(output_dir, UPDATE_FILE)
+    else:
+      update_path = os.path.join(output_dir, KERNEL_UPDATE_FILE)
     _Log('Generating update image %s', update_path)
 
     update_command = [
@@ -281,6 +294,9 @@ class Autoupdate(object):
         '--image', image_path,
         '--output', update_path,
     ]
+
+    if not legacy_image:
+      update_command.extend(['--include_kernel'])
 
     if src_image:
       update_command.extend(['--src_image', src_image])
@@ -319,7 +335,7 @@ class Autoupdate(object):
 
     return os.path.join(CACHE_DIR, update_dir)
 
-  def GenerateUpdateImage(self, image_path, output_dir):
+  def GenerateUpdateImage(self, image_path, output_dir, legacy_image):
     """Force generates an update payload based on the given image_path.
 
     Args:
@@ -332,17 +348,21 @@ class Autoupdate(object):
     """
     _Log('Generating update for image %s', image_path)
 
-    # Delete any previous state in this directory.
-    os.system('rm -rf "%s"' % output_dir)
-    os.makedirs(output_dir)
+    try:
+      os.makedirs(output_dir)
+    except OSError as e:
+      if e.errno == errno.EEXIST:
+        pass
 
     try:
-      self.GenerateUpdateFile(self.src_image, image_path, output_dir)
+      self.GenerateUpdateFile(self.src_image, image_path, output_dir,
+                              legacy_image)
     except subprocess.CalledProcessError:
       os.system('rm -rf "%s"' % output_dir)
       raise AutoupdateError('Failed to generate update in %s' % output_dir)
 
-  def GenerateUpdateImageWithCache(self, image_path, static_image_dir):
+  def GenerateUpdateImageWithCache(self, image_path, static_image_dir,
+                                   legacy_image):
     """Force generates an update payload based on the given image_path.
 
     Args:
@@ -356,43 +376,50 @@ class Autoupdate(object):
     """
     _Log('Generating update for src %s image %s', self.src_image, image_path)
 
-    # If it was pregenerated_path, don't regenerate
-    if self.pregenerated_path:
-      return self.pregenerated_path
-
     # Which sub_dir of static_image_dir should hold our cached update image
     cache_sub_dir = self.FindCachedUpdateImageSubDir(self.src_image, image_path)
     _Log('Caching in sub_dir "%s"', cache_sub_dir)
 
     # The cached payloads exist in a cache dir
-    cache_update_payload = os.path.join(static_image_dir,
-                                        cache_sub_dir, UPDATE_FILE)
+    if legacy_image:
+      cache_update_payload = os.path.join(static_image_dir,
+                                          cache_sub_dir, UPDATE_FILE)
+    else:
+      cache_update_payload = os.path.join(static_image_dir,
+                                          cache_sub_dir, KERNEL_UPDATE_FILE)
 
     full_cache_dir = os.path.join(static_image_dir, cache_sub_dir)
     # Check to see if this cache directory is valid.
     if not os.path.exists(cache_update_payload):
-      self.GenerateUpdateImage(image_path, full_cache_dir)
-
-    self.pregenerated_path = cache_sub_dir
+      self.GenerateUpdateImage(image_path, full_cache_dir, legacy_image)
 
     # Generate the cache file.
-    self.GetLocalPayloadAttrs(full_cache_dir)
-    cache_metadata_file = os.path.join(full_cache_dir, METADATA_FILE)
+    self.GetLocalPayloadAttrs(full_cache_dir, legacy_image)
+    if legacy_image:
+      cache_metadata_file = os.path.join(full_cache_dir, METADATA_FILE)
+    else:
+      cache_metadata_file = os.path.join(full_cache_dir, KERNEL_METADATA_FILE)
 
     # Generation complete, copy if requested.
     if self.copy_to_static_root:
       # The final results exist directly in static
-      update_payload = os.path.join(static_image_dir,
-                                    UPDATE_FILE)
-      metadata_file = os.path.join(static_image_dir, METADATA_FILE)
+      if legacy_image:
+        update_payload = os.path.join(static_image_dir,
+                                      UPDATE_FILE)
+        metadata_file = os.path.join(static_image_dir, METADATA_FILE)
+      else:
+        update_payload = os.path.join(static_image_dir,
+                                      KERNEL_UPDATE_FILE)
+        metadata_file = os.path.join(static_image_dir, KERNEL_METADATA_FILE)
+
       common_util.CopyFile(cache_update_payload, update_payload)
       common_util.CopyFile(cache_metadata_file, metadata_file)
       return None
     else:
-      return self.pregenerated_path
+      return cache_sub_dir
 
   def GenerateLatestUpdateImage(self, board, client_version,
-                                static_image_dir):
+                                static_image_dir, legacy_image):
     """Generates an update using the latest image that has been built.
 
     This will only generate an update if the newest update is newer than that
@@ -420,9 +447,11 @@ class Autoupdate(object):
                             'for client')
 
     return self.GenerateUpdateImageWithCache(latest_image_path,
-                                             static_image_dir=static_image_dir)
+                                             static_image_dir=static_image_dir,
+                                             legacy_image=legacy_image)
 
-  def GenerateUpdatePayload(self, board, client_version, static_image_dir):
+  def GenerateUpdatePayload(self, board, client_version, static_image_dir,
+                            legacy_image):
     """Generates an update for an image and returns the relative payload dir.
 
     Returns:
@@ -431,7 +460,10 @@ class Autoupdate(object):
     Raises:
       AutoupdateError if it failed to generate the payload.
     """
-    dest_path = os.path.join(static_image_dir, UPDATE_FILE)
+    if legacy_image:
+      dest_path = os.path.join(static_image_dir, UPDATE_FILE)
+    else:
+      dest_path = os.path.join(static_image_dir, KERNEL_UPDATE_FILE)
 
     if self.payload_path:
       # If the forced payload is not already in our static_image_dir,
@@ -446,7 +478,8 @@ class Autoupdate(object):
     elif self.forced_image:
       return self.GenerateUpdateImageWithCache(
           self.forced_image,
-          static_image_dir=static_image_dir)
+          static_image_dir=static_image_dir,
+          legacy_image=legacy_image)
     else:
       if not board:
         raise AutoupdateError(
@@ -454,7 +487,7 @@ class Autoupdate(object):
           'You must set --board when pre-generating latest update.')
 
       return self.GenerateLatestUpdateImage(board, client_version,
-                                            static_image_dir)
+                                            static_image_dir, legacy_image)
 
   def PreGenerateUpdate(self):
     """Pre-generates an update and prints out the relative path it.
@@ -508,7 +541,7 @@ class Autoupdate(object):
     except IOError as e:
       raise AutoupdateError('Failed to obtain remote payload info: %s', e)
 
-  def GetLocalPayloadAttrs(self, payload_dir):
+  def GetLocalPayloadAttrs(self, payload_dir, legacy_image):
     """Returns hashes, size and delta flag of a local update payload.
 
     Args:
@@ -517,12 +550,15 @@ class Autoupdate(object):
       A tuple containing the SHA1, SHA256, file size and whether or not it's a
       delta payload (Boolean).
     """
-    filename = os.path.join(payload_dir, UPDATE_FILE)
+    if legacy_image:
+      filename = os.path.join(payload_dir, UPDATE_FILE)
+    else:
+      filename = os.path.join(payload_dir, KERNEL_UPDATE_FILE)
     if not os.path.exists(filename):
-      raise AutoupdateError('update.gz not present in payload dir %s' %
-                            payload_dir)
+      raise AutoupdateError('%s not present in payload dir %s' %
+                            (filename, payload_dir))
 
-    metadata_obj = Autoupdate._ReadMetadataFromFile(payload_dir)
+    metadata_obj = Autoupdate._ReadMetadataFromFile(payload_dir, legacy_image)
     if not metadata_obj or not (metadata_obj.sha1 and
                                 metadata_obj.sha256 and
                                 metadata_obj.size):
@@ -531,14 +567,15 @@ class Autoupdate(object):
       size = common_util.GetFileSize(filename)
       is_delta_format = self._IsDeltaFormatFile(filename)
       metadata_obj = UpdateMetadata(sha1, sha256, size, is_delta_format)
-      Autoupdate._StoreMetadataToFile(payload_dir, metadata_obj)
+      Autoupdate._StoreMetadataToFile(payload_dir, metadata_obj, legacy_image)
 
     return metadata_obj
 
   def _ProcessUpdateComponents(self, app, event):
     """Processes the app and event components of an update request.
 
-    Returns tuple containing forced_update_label, client_version, and board.
+    Returns tuple containing forced_update_label, client_version, board and
+    app_id
     """
     # Initialize an empty dictionary for event attributes to log.
     log_message = {}
@@ -550,11 +587,13 @@ class Autoupdate(object):
 
     client_version = 'ForcedUpdate'
     board = None
+    app_id = None
     if app:
       client_version = app.getAttribute('version')
       channel = app.getAttribute('track')
       board = (app.hasAttribute('board') and app.getAttribute('board')
                   or self.board)
+      app_id = app.getAttribute('appid')
       # Add attributes to log message
       log_message['version'] = client_version
       log_message['track'] = channel
@@ -581,7 +620,7 @@ class Autoupdate(object):
       curr_host_info.AddLogEntry(log_message)
 
     return (curr_host_info.attrs.pop('forced_update_label', None),
-            client_version, board)
+            client_version, board, app_id)
 
   def _GetStaticUrl(self):
     """Returns the static url base that should prefix all payload responses."""
@@ -620,13 +659,19 @@ class Autoupdate(object):
     # http://hostname:8080/static/update.gz.
     static_urlbase = self._GetStaticUrl()
 
+    _Log(data)
     # Parse the XML we got into the components we care about.
     protocol, app, event, update_check = autoupdate_lib.ParseUpdateRequest(data)
 
     # #########################################################################
     # Process attributes of the update check.
-    forced_update_label, client_version, board = self._ProcessUpdateComponents(
+    forced_update_label, client_version, board, app_id = self._ProcessUpdateComponents(
         app, event)
+
+    if app_id == '{e96281a6-d1af-4bde-9a0a-97b76e56dc57}':
+      legacy_image = True
+    else:
+      legacy_image = False
 
     # We only process update_checks in the update rpc.
     if not update_check:
@@ -678,12 +723,16 @@ class Autoupdate(object):
         if not self.serve_only:
           # Generate payload if necessary.
           rel_path = self.GenerateUpdatePayload(board, client_version,
-                                                static_image_dir)
+                                                static_image_dir, legacy_image)
 
+        if legacy_image:
+          filename = UPDATE_FILE
+        else:
+          filename = KERNEL_UPDATE_FILE
         url = '/'.join(filter(None, [static_urlbase, label, rel_path,
-                                     UPDATE_FILE]))
+                                     filename]))
         local_payload_dir = _NonePathJoin(static_image_dir, rel_path)
-        metadata_obj = self.GetLocalPayloadAttrs(local_payload_dir)
+        metadata_obj = self.GetLocalPayloadAttrs(local_payload_dir, legacy_image)
 
     except AutoupdateError as e:
       # Raised if we fail to generate an update payload.
