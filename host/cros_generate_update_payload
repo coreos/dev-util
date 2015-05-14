@@ -38,6 +38,7 @@ find_common_sh
 . "./chromeos-common.sh" || \
   die "Unable to load /usr/lib/installer/chromeos-common.sh"
 
+ESP_MNT=""
 SRC_MNT=""
 DST_MNT=""
 SRC_KERNEL=""
@@ -49,6 +50,11 @@ STATE_MNT=""
 # Pass an arg to not exit 1 at the end
 cleanup() {
   set +e
+  if [ -n "$ESP_MNT" ]; then
+    sudo umount "$ESP_MNT"
+    [ -d "$ESP_MNT" ] && rmdir "$ESP_MNT"
+    ESP_MNT=""
+  fi
   if [ -n "$SRC_MNT" ]; then
     sudo umount "$SRC_MNT"
     [ -d "$SRC_MNT" ] && rmdir "$SRC_MNT"
@@ -112,6 +118,7 @@ DEFINE_string image "" "The image that should be sent to clients."
 DEFINE_string src_image "" "Optional: a source image. If specified, this makes\
  a delta update."
 DEFINE_string output "" "Output file"
+DEFINE_boolean include_kernel "$FLAGS_FALSE" "Include the kernel as a payload object"
 DEFINE_string metadata_output "" "Output file for metadata payload"
 DEFINE_boolean outside_chroot "$FLAGS_FALSE" "Running outside of chroot."
 DEFINE_string private_key "" "Path to private key in .pem format."
@@ -168,6 +175,8 @@ if [ "$DELTA" -eq "$FLAGS_TRUE" ]; then
   md5sum "$SRC_ROOT"
 fi
 
+ESP_MNT=$(mktemp -d /tmp/esp_root.XXXXXX)
+sudo mount -o loop,offset=2097152 "$FLAGS_image" "$ESP_MNT"
 
 DST_ROOT=$(extract_partition_to_temp_file "$FLAGS_image" 3)
 
@@ -183,9 +192,15 @@ if [ "$DELTA" -eq "$FLAGS_TRUE" ]; then
       -old_dir "$SRC_MNT" -old_image "$SRC_ROOT" -old_kernel "$SRC_KERNEL" \
       -out_file "$FLAGS_output" -private_key "$FLAGS_private_key"
 else
-  "$GENERATOR" \
-      -new_image "$DST_ROOT" \
-      -out_file "$FLAGS_output" -private_key "$FLAGS_private_key"
+    if [ "$FLAGS_include_kernel" -eq "$FLAGS_TRUE" ]; then
+	"$GENERATOR" \
+	    -new_image "$DST_ROOT" -new_kernel "$ESP_MNT/coreos/vmlinuz-a" \
+	    -out_file "$FLAGS_output" -private_key "$FLAGS_private_key"
+    else
+	"$GENERATOR" \
+	    -new_image "$DST_ROOT" \
+	    -out_file "$FLAGS_output" -private_key "$FLAGS_private_key"
+    fi
 fi
 
 # Optionally verify the signature we just made
