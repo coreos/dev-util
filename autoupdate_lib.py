@@ -10,7 +10,7 @@ import time
 from xml.dom import minidom
 
 
-APP_ID = '87efface-864d-49a5-9bb3-4b050a7c227a'
+APP_ID = 'e96281a6-d1af-4bde-9a0a-97b76e56dc57'
 
 # Responses for the various Omaha protocols indexed by the protocol version.
 UPDATE_RESPONSE = {}
