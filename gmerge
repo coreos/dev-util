@@ -27,7 +27,7 @@ class GMerger(object):
     try:
       self.devkit_url = self.update_conf['DEVSERVER']
       self.board_name = self.update_conf['COREOS_RELEASE_BOARD']
-    except KeyError, e:
+    except KeyError as e:
       sys.exit('Could not find /etc/coreos/update.conf value: ' + e.message)
 
   def ParseUpdateConf(self, conf_lines):
@@ -70,13 +70,13 @@ class GMerger(object):
     try:
       result = urllib2.urlopen(self.devkit_url + '/build',
                                data=self.GeneratePackageRequest(package_name))
-      print result.read()
+      sys.stdout.write(result.read())
       result.close()
 
-    except urllib2.HTTPError, e:
+    except urllib2.HTTPError as e:
       # The exception includes the content, which is the error mesage
       sys.exit(e.read())
-    except urllib2.URLError, e:
+    except urllib2.URLError as e:
       sys.exit('Could not reach devserver. Reason: %s' % e.reason)
 
 
@@ -121,7 +121,7 @@ def main():
   merger = GMerger(conf_data)
   merger.RequestPackageBuild(package_name)
 
-  print 'Emerging ', package_name
+  sys.stdout.write("Emerging %s" % package_name)
   merger.SetupPortageEnvironment(os.environ)
   emerge_args = 'emerge --getbinpkgonly --usepkgonly --verbose'
   if FLAGS.deep:
