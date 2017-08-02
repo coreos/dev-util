@@ -9,6 +9,12 @@ import sys
 
 import portage
 
+branch = 'master'
+with open('/usr/share/coreos/release') as release_file:
+	for line in release_file:
+		if line.startswith('COREOS_RELEASE_VERSION='):
+			branch = 'build-' + line.replace('.', '=', 1).split('=', 2)[1]
+
 synced = False
 eroot = portage.settings['EROOT']
 for repo in portage.db[eroot]['vartree'].settings.repositories:
@@ -24,7 +30,7 @@ for repo in portage.db[eroot]['vartree'].settings.repositories:
 
 	print('>>> Starting git clone in %s' % repo.location)
 	os.umask(0o022)
-	subprocess.check_call(['git', 'clone', repo.sync_uri, repo.location])
+	subprocess.check_call(['git', 'clone', '-b', branch, repo.sync_uri, repo.location])
 	print('>>> Git clone in %s successful' % repo.location)
 	synced = True
 
