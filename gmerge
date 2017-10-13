@@ -70,7 +70,7 @@ class GMerger(object):
     try:
       result = urllib2.urlopen(self.devkit_url + '/build',
                                data=self.GeneratePackageRequest(package_name))
-      sys.stdout.write(result.read())
+      sys.stdout.write(result.read() + '\n')
       result.close()
 
     except urllib2.HTTPError as e:
@@ -121,7 +121,7 @@ def main():
   merger = GMerger(conf_data)
   merger.RequestPackageBuild(package_name)
 
-  sys.stdout.write("Emerging %s" % package_name)
+  sys.stdout.write("Emerging %s\n" % package_name)
   merger.SetupPortageEnvironment(os.environ)
   emerge_args = 'emerge --getbinpkgonly --usepkgonly --verbose'
   if FLAGS.deep:
