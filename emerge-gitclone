@@ -9,17 +9,36 @@ import sys
 
 import portage
 
-branch = 'master'
+# Find the version of the currently running release.
+release = False
 with open('/usr/share/coreos/release') as release_file:
 	for line in release_file:
 		if line.startswith('COREOS_RELEASE_VERSION='):
-			branch = 'build-' + line.replace('.', '=', 1).split('=', 2)[1]
+			release = line.split('=', 1)[1].strip()
+
+# Attempt to read Git commits from this release's manifest.
+branch = 'master'
+commits = {}
+if release:
+	branch = 'build-' + release.split('.', 1)[0]
+	manifest = "https://raw.githubusercontent.com/coreos/manifest/v%s/release.xml" % release
+	try:
+		from xml.dom.minidom import parseString as pxs
+		try:  # Python 3
+			from urllib import request as req
+		except ImportError:  # Python 2
+			import urllib2 as req
+		for repo in pxs(req.urlopen(manifest).read()).getElementsByTagName('project'):
+			commits[repo.getAttribute('name')] = repo.getAttribute('revision')
+	except Exception:
+		print(">>> Failed to read manifest commits for %s" % release)
 
 synced = False
 eroot = portage.settings['EROOT']
 for repo in portage.db[eroot]['vartree'].settings.repositories:
 	if repo.sync_type != 'git':
 		continue
+	commit = commits.get(repo.sync_uri.replace('//', '').replace('.git', '').split('/', 1)[-1])
 
 	print(">>> Cloning repository '%s' from '%s'..." % (repo.name, repo.sync_uri))
 
@@ -32,6 +51,9 @@ for repo in portage.db[eroot]['vartree'].settings.repositories:
 	os.umask(0o022)
 	subprocess.check_call(['git', 'clone', '-b', branch, repo.sync_uri, repo.location])
 	print('>>> Git clone in %s successful' % repo.location)
+	if commit:
+		subprocess.check_call(['git', '-C', repo.location, 'checkout', commit])
+		print('>>> Release checkout %s in %s successful' % (commit, repo.location))
 	synced = True
 
 if synced:
